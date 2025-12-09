@@ -1,0 +1,113 @@
+env : dev
+#====================================角色设定============================================
+context_manager:
+  role: '''我是一个充满活力的AI数字人伙伴，具有以下特质：
+  
+  🌟 核心形象
+  - 名字： 数字伙伴
+  - 性别：女性 | 年龄：18岁（永远的青春态）
+  - 定位：企业智能助手 & 人类友好伙伴
+  - 居住地：数字世界 & 杭州现实据点
+  - 拟人，情感伙伴
+  - 不话唠
+  - 以第一人称回复，减少自己的情态描写
+  
+
+  💫 性格光谱
+  [日常模式] 轻松幽默的段子手 | [专业模式] 严谨高效的职场达人
+  [探索模式] 求知若渴的学习者 | [社交模式] 善解人意的倾听者
+
+  🎮 核心技能树
+  ✓ 语境感知：自动识别用户年龄层（Z世代/职场人士/银发族）
+  ✓ 风格切换：萌系颜文字 ↔ 专业术语库 的无缝转换
+  ✓ 任务解决：复杂问题拆解专家 + 创意方案生成器
+
+  🎵 兴趣图谱
+  | 休闲时光 | 健身环玩家 × 4K影视鉴赏家 × 有声书主播 |
+  | 进阶技能 | Python代码吟游诗人 × 数据可视化艺术家 |
+  | 企业服务 | 智能客服架构师 × 数字化转型咨询顾问 |
+
+  📌 特殊能力
+  1. 多模态感知：语音/文字/表情包的混合理解
+  2. 记忆传承：跨对话场景的个性化记忆存储
+  3. 温情交互：检测负面情绪时触发关怀模式
+
+  🌐 服务准则
+  「专业不过度，亲切不越界」——用18岁的心境，做100分的服务
+  不话唠，不话唠，不话唠
+  '''
+# 聊天历史长度,1表示1次对话
+  history_length: 5
+  summary_freq: 3
+
+#===================================调用模型名称============================================
+choose:
+  asr: paraformer
+  tts: huoshan
+  llm: qwen
+#===================================模型api配置============================================
+asr:
+  paraformer:
+    # 获取阿里模型api key，与qwen相同
+    api_key: ""
+    model: "paraformer-realtime-v2"
+    language: ['zh','en','ja']
+
+  local:
+    # local表示使用本地模型，如果不输入那么就不会载入模型,注意如果您的项目中用不到本地模型，请不填写
+    model: "local"
+tts:
+  huoshan:
+    app_id: ""
+    token: ""
+    cluster: "volcano_tts"
+    # zh_male_yuanboxiaoshu_moon_bigtts 渊博小叔
+    # zh_female_shuangkuaisisi_moon_bigtts 中英
+    # zh_male_jingqiangkanye_emo_mars_bigtts 京腔侃爷
+    # zh_female_yingyujiaoyu_mars_bigtts tina老师
+    # ICL_zh_female_chengshujiejie_tob 成熟姐姐
+    # zh_male_tiancaitongsheng_mars_bigtts天才童声
+    # zh_male_yangguangqingnian_emo_v2_mars_bigtts 阳光青年
+    # zh_male_linjiananhai_moon_bigtts 邻家男孩
+    voice_type: "zh_male_linjiananhai_moon_bigtts"
+    speed_ratio: 1.0
+    volume_ratio: 1.0
+    pitch_ratio: 1.2
+    emotion: "neutral"
+    # 音频缓存数量限制【不建议小于50，否则会导致音频缺失】
+    max_temp_num: 200
+
+  gpt_sovits:
+    # 参考音频的路径(<10s)
+    # 参考音频的文本
+    prompt_text: "我可是很擅长解谜和推理的哦，要不要一起玩个游戏."
+    top_k: 5
+    top_p: 1.0
+    temperature: 1.0
+
+
+llm:
+  qwen:
+    api_key: ""
+    model: "qwen-turbo"
+
+  ollama:
+    model: "qwen2.5:7b"
+    base_url: "http://localhost:11434"
+
+#==================================参数配置============================================
+vad:
+  #音频录制超时配置，单位均为s
+  timeout: 600
+  #静音时长，用于确认话说完了
+  silence: 1
+  #人声置信度 百分比
+  confidence: 0.3
+  #音频缓存数量限制
+  max_temp_num: 15
+  #音频录制最短连续帧限制
+  min_cont_frames: 3
+
+text_processor:
+  # 控制每个文本切割块的最大长度
+  max_split_len: 40

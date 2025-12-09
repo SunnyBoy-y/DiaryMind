@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --font-handwriting: "Patrick Hand", cursive;
+}
+
+:root {
+  font-family: "Patrick Hand", system-ui, sans-serif;
+}
+
+body {
+    background-color: #f9f9f9;
+}

@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-docx
+aiofiles
+python-multipart
+websockets
+loguru
+requests
+PyYAML
+emoji
+dashscope
+funasr
+httpx
+pyaudio
+numpy
