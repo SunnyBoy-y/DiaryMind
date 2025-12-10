@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Clock from './components/Clock';
 import DiaryList from './components/DiaryList';
 import TodoList from './components/TodoList';
@@ -11,6 +11,9 @@ import InteractiveCard from './components/InteractiveCard';
 import SidebarMenu from './components/SidebarMenu';
 import BombOverlay from './components/BombOverlay';
 import MusicPlayer from './components/MusicPlayer';
+import { Music as MusicIcon, X, Play, Pause } from 'lucide-react';
+
+const MUSIC_API_BASE = "http://localhost:8082/api/music";
 
 function App() {
   const [currentView, setCurrentView] = useState('home'); // 'home' | 'collection' | 'fullscreen' | 'music'
@@ -19,7 +22,83 @@ function App() {
   const [chatResponse, setChatResponse] = useState('');
   const [isChatting, setIsChatting] = useState(false);
 
-  // Hourly encouraging words
+  // Music State
+  const [playlist, setPlaylist] = useState([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentSong, setCurrentSong] = useState(null);
+  const audioRef = useRef(new Audio());
+
+  // Fetch playlist on mount
+  useEffect(() => {
+    fetch(`${MUSIC_API_BASE}/list`)
+      .then(res => res.json())
+      .then(data => setPlaylist(data))
+      .catch(err => console.error("Failed to fetch playlist", err));
+    
+    // Cleanup audio on unmount
+    const audio = audioRef.current;
+    return () => {
+        audio.pause();
+    };
+  }, []);
+
+  // Handle song ending (Auto play next)
+  useEffect(() => {
+      const audio = audioRef.current;
+      const handleEnded = () => {
+          handleNextSong();
+      };
+      audio.addEventListener('ended', handleEnded);
+      return () => audio.removeEventListener('ended', handleEnded);
+  }); // Re-bind if handleNextSong changes, or use ref for handler
+
+  const playSong = (song) => {
+    if (currentSong !== song) {
+        setCurrentSong(song);
+        audioRef.current.src = `${MUSIC_API_BASE}/stream/${song}`;
+    }
+    audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(e => console.error("Play error", e));
+  };
+
+  const togglePlay = () => {
+    if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+    } else {
+        if (audioRef.current.src) {
+            audioRef.current.play().catch(e => console.error("Play error", e));
+            setIsPlaying(true);
+        } else if (playlist.length > 0) {
+            playSong(playlist[0]);
+        }
+    }
+  };
+
+  const handleNextSong = () => {
+    if (playlist.length === 0) return;
+    const idx = currentSong ? playlist.indexOf(currentSong) : -1;
+    const nextIdx = (idx + 1) % playlist.length;
+    playSong(playlist[nextIdx]);
+  };
+
+  const handlePrevSong = () => {
+    if (playlist.length === 0) return;
+    const idx = currentSong ? playlist.indexOf(currentSong) : -1;
+    const prevIdx = (idx - 1 + playlist.length) % playlist.length;
+    playSong(playlist[prevIdx]);
+  };
+
+  const stopMusic = (e) => {
+      e.stopPropagation();
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0; // Optional: reset to start
+      setIsPlaying(false);
+      // Optional: clear current song if we want to completely stop
+      // setCurrentSong(null);
+  };
+
   useEffect(() => {
     const fetchEncouragement = async () => {
       try {
@@ -148,7 +227,15 @@ function App() {
           />;
       }
       if (currentView === 'music') {
-          return <MusicPlayer />;
+          return <MusicPlayer 
+            playlist={playlist}
+            currentSong={currentSong}
+            isPlaying={isPlaying}
+            onPlay={playSong}
+            onToggle={togglePlay}
+            onNext={handleNextSong}
+            onPrev={handlePrevSong}
+          />;
       }
       
       // Home View
@@ -213,6 +300,19 @@ function App() {
         <div className="absolute -top-12 left-0 md:-left-20 md:top-0 z-30" onClick={() => setIsMenuOpen(!isMenuOpen)}>
           <SidebarButton />
         </div>
+
+        {/* Music Playing Icon - Show when playing and not in music view */}
+        {isPlaying && currentView !== 'music' && (
+            <div 
+                className="absolute -top-12 left-14 md:-left-20 md:top-14 z-30 w-12 h-12 bg-white border-2 border-black flex items-center justify-center rounded-full cursor-pointer hover:bg-gray-100 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                onClick={stopMusic}
+                title="点击停止播放"
+            >
+                <div className="animate-spin [animation-duration:3s]">
+                   <MusicIcon size={20} />
+                </div>
+            </div>
+        )}
 
         {/* Sidebar Menu - Now positioned relative to the button wrapper if we want, or absolute like before */}
         {/* Since SidebarButton is absolute -top-12 left-0, SidebarMenu should be visually below it */}

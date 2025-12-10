@@ -3,63 +3,35 @@ import InteractiveCard from './InteractiveCard';
 import InputBar from './InputBar';
 import { Play, Pause, SkipBack, SkipForward, ArrowUp, Music as MusicIcon } from 'lucide-react';
 
-const API_BASE = "http://localhost:8082/api/music";
-
-export default function MusicPlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [songName, setSongName] = useState('No Song Selected');
+export default function MusicPlayer({ 
+  playlist = [], 
+  currentSong = 'No Song Selected', 
+  isPlaying = false, 
+  onPlay, 
+  onToggle, 
+  onNext, 
+  onPrev 
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [showPlaylist, setShowPlaylist] = useState(false);
-  const [playlist, setPlaylist] = useState([]);
+  const [searchValue, setSearchValue] = useState('');
+  const [suggestionSuffix, setSuggestionSuffix] = useState('');
+  
+  // Search State
+  const [searchMatches, setSearchMatches] = useState([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
   
   const inputRef = useRef(null);
   const timeoutRef = useRef(null);
-  const audioRef = useRef(new Audio());
-
-  // Fetch playlist on mount
-  useEffect(() => {
-    fetch(`${API_BASE}/list`)
-        .then(res => res.json())
-        .then(data => {
-            setPlaylist(data);
-            if (data.length > 0) {
-                // Optionally auto-select first song
-                // setSongName(data[0]);
-            }
-        })
-        .catch(err => console.error("Failed to fetch playlist", err));
-        
-    return () => {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-    };
-  }, []);
-
-  // Handle play/pause state
-  useEffect(() => {
-      if (isPlaying && audioRef.current.src) {
-          audioRef.current.play().catch(e => console.error("Play error", e));
-      } else {
-          audioRef.current.pause();
-      }
-  }, [isPlaying]);
-
-  const playSong = (song) => {
-      setSongName(song);
-      audioRef.current.src = `${API_BASE}/stream/${song}`;
-      audioRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch(e => console.error("Play error", e));
-      setShowPlaylist(false);
-  };
+  const clickCountRef = useRef(0);
+  const clickTimeoutRef = useRef(null);
 
   // Auto-scroll effect or switch back to display mode
   useEffect(() => {
     if (isEditing) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
-        // If user hasn't typed or interacted for 5 seconds, switch back
         setIsEditing(false);
       }, 5000);
     }
@@ -69,19 +41,14 @@ export default function MusicPlayer() {
   }, [isEditing, inputValue]);
 
   const handleInputClick = (e) => {
-    e.stopPropagation(); // Prevent double click propagation
+    e.stopPropagation();
     setIsEditing(true);
-    setInputValue(songName);
+    setInputValue(currentSong || '');
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const handleInputBlur = () => {
       setIsEditing(false);
-      if (inputValue.trim()) {
-          // Search functionality could be implemented here
-          // For now just set the name
-          // setSongName(inputValue);
-      }
   };
 
   const handleKeyDown = (e) => {
@@ -90,16 +57,95 @@ export default function MusicPlayer() {
       }
   };
 
-  const togglePlaylist = () => {
-      setShowPlaylist(!showPlaylist);
+  // Visualization heights
+  const [barHeights, setBarHeights] = useState(Array.from({ length: 8 }, () => '20%'));
+
+  useEffect(() => {
+    let timer;
+    if (isPlaying) {
+      timer = setInterval(() => {
+        setBarHeights(prev => prev.map(() => `${Math.floor(Math.random() * 60) + 20}%`));
+      }, 200);
+    } else {
+      setTimeout(() => {
+        setBarHeights(Array.from({ length: 8 }, () => '20%'));
+      }, 0);
+    }
+    return () => { if (timer) clearInterval(timer); };
+  }, [isPlaying]);
+
+  const onSearchChange = (val) => {
+    setSearchValue(val);
+    const query = (val || '').trim().toLowerCase();
+    
+    if (!query) {
+      setSuggestionSuffix('');
+      setSearchMatches([]);
+      setCurrentMatchIndex(-1);
+      return;
+    }
+
+    // Fuzzy search (includes)
+    const matches = playlist.filter(name => name.toLowerCase().includes(query));
+    setSearchMatches(matches);
+    setCurrentMatchIndex(-1); // Reset index on new input
+
+    // Suffix logic for prefix matches only (visual aid)
+    const prefixMatch = matches.find(name => name.toLowerCase().startsWith(query));
+    setSuggestionSuffix(prefixMatch ? prefixMatch.slice(query.length) : '');
+  };
+
+  const handleTab = () => {
+    if (searchMatches.length === 0) return;
+    
+    const nextIndex = (currentMatchIndex + 1) % searchMatches.length;
+    setCurrentMatchIndex(nextIndex);
+    setSearchValue(searchMatches[nextIndex]);
+    setSuggestionSuffix(''); // Clear suffix
+  };
+
+  const handleSearchSend = (text) => {
+    const query = (text || '').trim().toLowerCase();
+    if (!query) return;
+    
+    // Try to find exact match or use the selected match
+    let match = playlist.find(name => name.toLowerCase() === query);
+    if (!match && searchMatches.length > 0) {
+        // If we have matches, play the first one or current cycled one?
+        // Let's play the first one if exact match fails
+        match = searchMatches[0];
+    }
+    
+    if (match) {
+      onPlay && onPlay(match);
+      setSearchValue('');
+      setSearchMatches([]);
+    }
+  };
+
+  const handleCardClick = () => {
+    clickCountRef.current += 1;
+    
+    if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+    }
+
+    if (clickCountRef.current === 2) { // Double click
+        setShowPlaylist(true);
+        clickCountRef.current = 0;
+    } else {
+        clickTimeoutRef.current = setTimeout(() => {
+            clickCountRef.current = 0;
+        }, 300); // Reduced timeout for better response
+    }
   };
 
   return (
     <div className="flex flex-col h-full w-full">
         <div className="flex-1 flex items-center justify-center p-6 relative">
             <InteractiveCard 
-                className="w-full max-w-md aspect-square flex flex-col items-center justify-between !p-8 bg-white relative transition-all duration-300"
-                onDoubleClick={() => setShowPlaylist(true)}
+                className="w-full max-w-md aspect-square flex flex-col items-center justify-between !p-8 bg-white relative transition-all duration-300 select-none"
+                onClick={handleCardClick}
             >
                 <h2 className="absolute top-4 left-4 font-handwriting text-2xl">音乐播放器</h2>
                 
@@ -116,18 +162,18 @@ export default function MusicPlayer() {
                         </div>
                         <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                             {playlist.length === 0 ? (
-                                <div className="text-center text-gray-500 mt-4">暂无音乐 (请在server/music文件夹添加音乐)</div>
+                                <div className="text-center text-gray-500 mt-4">暂无音乐</div>
                             ) : (
                                 playlist.map((song, idx) => (
                                     <div 
                                         key={idx}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            playSong(song);
+                                            onPlay && onPlay(song);
                                         }}
                                         className={`
                                             p-3 border-2 border-black rounded cursor-pointer hover:bg-gray-100 transition-colors flex items-center gap-3
-                                            ${songName === song ? 'bg-black text-white hover:bg-black/90' : 'bg-white'}
+                                            ${currentSong === song ? 'bg-black text-white hover:bg-black/90' : 'bg-white'}
                                         `}
                                     >
                                         <MusicIcon size={16} />
@@ -141,12 +187,12 @@ export default function MusicPlayer() {
                     <>
                         {/* Spectrum Visualization */}
                         <div className="flex-1 flex items-center justify-center gap-2 w-full mt-8 mb-4 pointer-events-none">
-                             {[...Array(8)].map((_, i) => (
+                             {barHeights.map((h, i) => (
                                  <div 
                                     key={i} 
                                     className={`w-2 bg-black rounded-full transition-all duration-300 ease-in-out ${isPlaying ? 'animate-pulse' : ''}`}
                                     style={{ 
-                                        height: isPlaying ? `${Math.random() * 60 + 20}%` : '20%',
+                                        height: h,
                                         animationDelay: `${i * 0.1}s`
                                     }}
                                  ></div>
@@ -155,16 +201,22 @@ export default function MusicPlayer() {
 
                         {/* Controls */}
                         <div className="flex items-center gap-8 mb-8" onClick={(e) => e.stopPropagation()}>
-                            <button className="hover:scale-110 transition-transform">
+                            <button 
+                                className="hover:scale-110 transition-transform"
+                                onClick={onPrev}
+                            >
                                 <SkipBack size={32} fill="black" />
                             </button>
                             <button 
-                                onClick={() => setIsPlaying(!isPlaying)}
+                                onClick={onToggle}
                                 className="w-16 h-16 border-2 border-black rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                             >
                                 {isPlaying ? <Pause size={32} fill="black" /> : <Play size={32} fill="black" ml={4} />}
                             </button>
-                            <button className="hover:scale-110 transition-transform">
+                            <button 
+                                className="hover:scale-110 transition-transform"
+                                onClick={onNext}
+                            >
                                 <SkipForward size={32} fill="black" />
                             </button>
                         </div>
@@ -193,7 +245,7 @@ export default function MusicPlayer() {
                                     className="w-full h-full border-2 border-black flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-50"
                                 >
                                     <div className="whitespace-nowrap animate-marquee px-4 font-handwriting text-xl">
-                                        正在播放: {songName} &nbsp;&nbsp;&nbsp;&nbsp; 正在播放: {songName}
+                                        正在播放: {currentSong} &nbsp;&nbsp;&nbsp;&nbsp; 正在播放: {currentSong}
                                     </div>
                                 </div>
                             )}
@@ -204,7 +256,14 @@ export default function MusicPlayer() {
         </div>
         
         {/* Input Bar at Bottom */}
-        <InputBar />
+        <InputBar 
+          value={searchValue}
+          onChange={onSearchChange}
+          suggestionSuffix={suggestionSuffix}
+          onAcceptSuggestion={handleTab}
+          onSendMessage={handleSearchSend}
+          placeholder="搜索歌曲，按 Tab 切换匹配项"
+        />
     </div>
   );
 }
