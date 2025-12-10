@@ -4,7 +4,7 @@ import InputBar from './InputBar';
 import InteractiveCard from './InteractiveCard';
 import { Save } from 'lucide-react';
 
-const API_BASE = "http://localhost:8082/api/diary";
+const API_BASE = import.meta.env.VITE_API_DIARY_BASE || `${import.meta.env.VITE_API_BASE || "/api"}/diary`;
 
 export default function FullScreenDiary() {
   const [weather, setWeather] = useState('sunny');

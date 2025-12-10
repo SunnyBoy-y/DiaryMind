@@ -4,7 +4,7 @@ import InputBar from './InputBar';
 import { ChevronUp, ChevronDown, Save, FileText, Edit, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
-const API_BASE = "http://localhost:8082/api/diary";
+const API_BASE = import.meta.env.VITE_API_DIARY_BASE || `${import.meta.env.VITE_API_BASE || "/api"}/diary`;
 
 export default function DiaryCollection({ onBack, onCreateNew }) {
   const [items, setItems] = useState([]);

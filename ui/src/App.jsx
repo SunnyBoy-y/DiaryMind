@@ -13,7 +13,8 @@ import BombOverlay from './components/BombOverlay';
 import MusicPlayer from './components/MusicPlayer';
 import { Music as MusicIcon, X, Play, Pause } from 'lucide-react';
 
-const MUSIC_API_BASE = "http://localhost:8082/api/music";
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+const MUSIC_API_BASE = `${API_BASE}/music`;
 
 function App() {
   const [currentView, setCurrentView] = useState('home'); // 'home' | 'collection' | 'fullscreen' | 'music'
@@ -106,14 +107,14 @@ function App() {
         
         // Try to fetch diary content
         try {
-           const listRes = await fetch('http://localhost:8082/api/diary/list');
+           const listRes = await fetch('/api/diary/list');
            const files = await listRes.json();
            if (files && files.length > 0) {
              // Sort to get latest (assuming filename contains timestamp)
              files.sort(); 
              const latestFile = files[files.length - 1];
              
-             const contentRes = await fetch(`http://localhost:8082/api/diary/content/${latestFile}`);
+             const contentRes = await fetch(`/api/diary/content/${latestFile}`);
              const contentData = await contentRes.json();
              if (contentData.content) {
                 // Truncate content if too long to avoid token limits?
@@ -125,7 +126,7 @@ function App() {
             console.warn("Failed to fetch diary for context:", e);
         }
 
-        const response = await fetch('http://localhost:8082/api/llm/chat', {
+        const response = await fetch('/api/llm/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -156,7 +157,7 @@ function App() {
     setChatResponse(''); // Clear previous
     
     try {
-      const response = await fetch('http://localhost:8082/api/llm/stream-chat', {
+      const response = await fetch('/api/llm/stream-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
