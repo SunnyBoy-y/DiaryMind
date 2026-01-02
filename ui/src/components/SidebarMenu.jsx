@@ -1,10 +1,11 @@
 import React from 'react';
-import { Bomb, Home, Save, FolderOpen, Music } from 'lucide-react';
+import { Bomb, Home, Save, FolderOpen, Music, Calendar as CalendarIcon } from 'lucide-react';
 
 export default function SidebarMenu({ isOpen, onBomb, onNavigate }) {
   const menuItems = [
     { icon: <Home size={24} />, label: '主页', action: () => onNavigate('home') },
     { icon: <Music size={24} />, label: '音乐', action: () => onNavigate('music') },
+    { icon: <CalendarIcon size={24} />, label: '时光机', action: () => onNavigate('timemachine') },
     { icon: <Save size={24} />, label: '导出', action: () => alert('Exporting...') },
     { icon: <FolderOpen size={24} />, label: '整理', action: () => alert('Organizing...') },
     { icon: <Bomb size={24} />, label: '炸弹', action: onBomb },

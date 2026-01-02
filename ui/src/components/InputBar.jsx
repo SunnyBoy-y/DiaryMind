@@ -20,6 +20,11 @@ export default function InputBar({ onFullScreenMode, onSendMessage, value: contr
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
+      if (suggestionSuffix && onAcceptSuggestion) {
+        e.preventDefault();
+        onAcceptSuggestion();
+        return;
+      }
       handleSend();
     }
     if (e.key === 'Tab') {
