@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from . import tts_api, llm_api, asr_api, common_api, music_api, diary_api
+from . import tts_api, llm_api, asr_api, common_api, music_api, diary_api, process_api, auth_api
 
 app = FastAPI(
     title="ALT系统API",
@@ -25,6 +25,8 @@ app.include_router(asr_api.router, prefix="/api/asr", tags=["ASR接口"])
 app.include_router(common_api.router, prefix="/api/common", tags=["公共功能接口"])
 app.include_router(music_api.router, prefix="/api/music", tags=["音乐接口"])
 app.include_router(diary_api.router, prefix="/api/diary", tags=["日记接口"])
+app.include_router(process_api.router, prefix="/api/process", tags=["流程接口"])
+app.include_router(auth_api.router, prefix="/api/auth", tags=["认证接口"])
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
