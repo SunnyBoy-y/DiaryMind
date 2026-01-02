@@ -6,7 +6,7 @@ import App from './App.jsx'
 import Login from './components/Login.jsx'
 import Register from './components/Register.jsx'
 
-const LoginWrapper = () => {
+export const LoginWrapper = () => {
   const navigate = useNavigate();
   return <Login onLogin={() => navigate('/')} />;
 };

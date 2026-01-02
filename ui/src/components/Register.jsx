@@ -58,7 +58,6 @@ const Register = () => {
         throw new Error(data.detail || 'Registration failed');
       }
 
-      const data = await response.json();
       setSuccess('注册成功！请登录');
       
       // 3秒后跳转到登录页面

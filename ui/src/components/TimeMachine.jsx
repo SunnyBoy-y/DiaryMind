@@ -188,7 +188,7 @@ export default function TimeMachine() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredDiaries.map((diary, index) => (
+              {filteredDiaries.map((diary) => (
                 <div key={diary.filename} className="relative border-l-4 border-gray-300 pl-6 pb-6">
                   {/* 时间点 */}
                   <div className="absolute -left-[11px] top-0 w-5 h-5 bg-blue-500 rounded-full border-2 border-white"></div>

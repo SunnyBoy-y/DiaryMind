@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import WeatherSelector from './WeatherSelector';
 import InputBar from './InputBar';
 import InteractiveCard from './InteractiveCard';
@@ -56,6 +56,40 @@ export default function FullScreenDiary() {
   const contentRef = useRef(content);
   const planRef = useRef(plan);
 
+  const handleAutoSave = useCallback(async () => {
+    if (!content.trim() && !plan.trim()) {
+      return;
+    }
+    setIsAutoSaving(true);
+    try {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString();
+      const timeStr = now.toLocaleTimeString();
+      const filename = `Diary_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      let diaryContent = `# ${dateStr} ${timeStr} [${weather}]\n\n`;
+      if (useIntro && intro.trim()) {
+        diaryContent += `${intro.trim()}\n\n`;
+      }
+      diaryContent += `## 发生了啥\n${contentRef.current}\n\n## 加点计划\n${planRef.current}`;
+      const response = await fetch(`${API_BASE}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename,
+          content: diaryContent,
+          format: 'md'
+        })
+      });
+      if (response.ok) {
+        setLastSaveTime(new Date());
+      }
+    } catch (error) {
+      console.error("Auto save failed:", error);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  }, [content, plan, intro, useIntro, weather]);
+
   // 自动保存功能
   useEffect(() => {
     // 更新ref值
@@ -78,51 +112,10 @@ export default function FullScreenDiary() {
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [content, plan, intro, useIntro]);
+  }, [content, plan, intro, useIntro, handleAutoSave]);
 
   // 自动保存处理函数
-  const handleAutoSave = async () => {
-    // 如果内容为空，不自动保存
-    if (!content.trim() && !plan.trim()) {
-      return;
-    }
-    
-    setIsAutoSaving(true);
-    try {
-      const now = new Date();
-      const dateStr = now.toLocaleDateString();
-      const timeStr = now.toLocaleTimeString();
-      const filename = `Diary_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      
-      // 构建完整内容，包括可能的前言
-      let diaryContent = `# ${dateStr} ${timeStr} [${weather}]\n\n`;
-      
-      // 如果使用前言，添加到内容中
-      if (useIntro && intro.trim()) {
-        diaryContent += `${intro.trim()}\n\n`;
-      }
-      
-      diaryContent += `## 发生了啥\n${contentRef.current}\n\n## 加点计划\n${planRef.current}`;
-
-      const response = await fetch(`${API_BASE}/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename: filename,
-          content: diaryContent,
-          format: 'md'
-        })
-      });
-
-      if (response.ok) {
-        setLastSaveTime(new Date());
-      }
-    } catch (error) {
-      console.error("Auto save failed:", error);
-    } finally {
-      setIsAutoSaving(false);
-    }
-  };
+  
 
   // 手动保存功能
   const handleSave = async () => {

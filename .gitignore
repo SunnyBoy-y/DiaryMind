@@ -184,6 +184,9 @@ $RECYCLE.BIN/
 # Exclude Excel user database to avoid committing PII/test accounts
 server/users.xlsx
 
+# Sensitive runtime configuration (contains API keys/tokens)
+server/ALT_pure/config/config.yaml
+
 # File storage
 file_storage/
 
@@ -200,3 +203,12 @@ Thumbs.db
 *.flac
 *.m4a
 *.ogg
+ 
+# Python virtual environment (Windows)
+Lib/
+Scripts/
+share/
+
+# UI local environment artifacts
+ui/Lib/
+ui/Scripts/

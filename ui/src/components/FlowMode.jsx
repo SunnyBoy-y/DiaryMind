@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 export default function FlowMode({ activeTask, nextTask, onExit }) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [encouragement, setEncouragement] = useState('保持专注，你做得很好！');
   const [clickCount, setClickCount] = useState(0);
   const lastClickTime = useRef(0);
@@ -40,7 +40,7 @@ export default function FlowMode({ activeTask, nextTask, onExit }) {
   useEffect(() => {
     if (clickCount >= 3) {
       onExit && onExit();
-      setClickCount(0);
+      setTimeout(() => setClickCount(0), 0);
     }
   }, [clickCount, onExit]);
 

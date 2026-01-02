@@ -16,6 +16,13 @@ export default function DiaryCollection({ onBack, onCreateNew }) {
   const contentRef = useRef(null);
   const [scrollRatio, setScrollRatio] = useState(0);
 
+  const fetchList = () => {
+      fetch(`${API_BASE}/list`)
+        .then(res => res.json())
+        .then(data => setItems(data))
+        .catch(err => console.error("Failed to fetch diaries", err));
+  };
+
   useEffect(() => {
       fetchList();
   }, []);
@@ -47,12 +54,7 @@ export default function DiaryCollection({ onBack, onCreateNew }) {
       return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isEditing, content]);
 
-  const fetchList = () => {
-      fetch(`${API_BASE}/list`)
-        .then(res => res.json())
-        .then(data => setItems(data))
-        .catch(err => console.error("Failed to fetch diaries", err));
-  };
+  
 
   const handleSelect = (filename) => {
       setLoading(true);
@@ -71,9 +73,13 @@ export default function DiaryCollection({ onBack, onCreateNew }) {
   };
 
   const handleCreateNew = () => {
-      setContent("");
-      setCurrentFilename("");
-      setIsEditing(true);
+      if (onCreateNew) {
+          onCreateNew();
+      } else {
+          setContent("");
+          setCurrentFilename("");
+          setIsEditing(true);
+      }
   };
 
   const handleSave = () => {
@@ -127,6 +133,14 @@ export default function DiaryCollection({ onBack, onCreateNew }) {
         <div className="flex items-center justify-between gap-4">
             <h1 className="text-4xl font-bold">日记集</h1>
             <div className="flex gap-2">
+                {onBack && (
+                    <button 
+                        onClick={onBack}
+                        className="px-4 py-2 border-2 border-black bg-white hover:bg-gray-100 font-bold"
+                    >
+                        返回
+                    </button>
+                )}
                 <button 
                     onClick={() => setIsEditing(!isEditing)}
                     className="px-4 py-2 border-2 border-black bg-white hover:bg-gray-100 font-bold flex items-center gap-2"

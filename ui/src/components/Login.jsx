@@ -39,8 +39,6 @@ const Login = ({ onLogin }) => {
         throw new Error(data.detail || 'Login failed');
       }
 
-      const data = await response.json();
-      // Cookie is set by the server
       onLogin();
     } catch (err) {
       setError(err.message);

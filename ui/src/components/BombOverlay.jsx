@@ -6,19 +6,19 @@ export default function BombOverlay({ isActive, onComplete }) {
 
   useEffect(() => {
     if (isActive) {
-      setStage('throwing');
+      setTimeout(() => setStage('throwing'), 0);
       // Random position for crack
       const x = 20 + Math.random() * 60; // 20% to 80% width
       const y = 20 + Math.random() * 60; // 20% to 80% height
-      setCrackPos({ x, y });
+      setTimeout(() => setCrackPos({ x, y }), 0);
 
       // Animation sequence
-      setTimeout(() => setStage('exploding'), 1000); // Throw duration
-      setTimeout(() => setStage('cracked'), 1500);   // Explosion duration
+      setTimeout(() => setStage('exploding'), 1000);
+      setTimeout(() => setStage('cracked'), 1500);
       setTimeout(() => {
           setStage('idle');
           onComplete();
-      }, 6500); // Crack duration (5s) + previous delays
+      }, 6500);
     }
   }, [isActive, onComplete]);
 

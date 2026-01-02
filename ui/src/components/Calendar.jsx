@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import InteractiveCard from './InteractiveCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
