@@ -180,6 +180,10 @@ $RECYCLE.BIN/
 *.ogg
 !server/music/
 
+# Application data files
+# Exclude Excel user database to avoid committing PII/test accounts
+server/users.xlsx
+
 # File storage
 file_storage/
 
@@ -191,3 +195,8 @@ file_storage/
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg

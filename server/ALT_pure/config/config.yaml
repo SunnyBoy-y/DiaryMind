@@ -49,7 +49,7 @@ choose:
 asr:
   paraformer:
     # 获取阿里模型api key，与qwen相同
-    api_key: ""
+    api_key: "sk-d79dc6d0616144eab444454ce444eaaa"
     model: "paraformer-realtime-v2"
     language: ['zh','en','ja']
 
@@ -58,8 +58,8 @@ asr:
     model: "local"
 tts:
   huoshan:
-    app_id: ""
-    token: ""
+    app_id: "6082784057"
+    token: "bF4nRpNiCcP8HDLfDJYvFupObvZxy0gq"
     cluster: "volcano_tts"
     # zh_male_yuanboxiaoshu_moon_bigtts 渊博小叔
     # zh_female_shuangkuaisisi_moon_bigtts 中英
@@ -88,7 +88,7 @@ tts:
 
 llm:
   qwen:
-    api_key: ""
+    api_key: "sk-733f2c60b2a04f4fb478185d38d1b330"
     model: "qwen-turbo"
 
   ollama:
