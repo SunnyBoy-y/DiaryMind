@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import InteractiveCard from './InteractiveCard';
 
-export default function Clock() {
+export default function Clock({ simple = false, scale = 1 }) {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -16,11 +16,15 @@ export default function Clock() {
   // Generate numbers 1-12 positioned around the circle
   const numbers = Array.from({ length: 12 }, (_, i) => i + 1);
 
-  return (
-    <InteractiveCard className="flex flex-col items-center h-full relative !p-4 bg-[#fdfbf7]">
-        <h2 className="text-xl font-bold mb-4 font-handwriting">时钟</h2>
-      <div className="relative w-32 h-32 border-2 border-[#2d2d2d] rounded-full flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(45,45,45,0.5)] bg-white"
-           style={{ borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%' }}> {/* Imperfect circle */}
+  const ClockFace = (
+      <div 
+        className={`relative w-32 h-32 border-2 border-[#2d2d2d] rounded-full flex items-center justify-center bg-white ${!simple ? 'shadow-[2px_2px_0px_0px_rgba(45,45,45,0.5)]' : 'shadow-[4px_4px_0px_0px_rgba(45,45,45,1)]'}`}
+        style={{ 
+            borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%', // Imperfect circle
+            transform: `scale(${scale})`,
+            transformOrigin: 'center'
+        }}
+      >
         
         {/* Numbers */}
         {numbers.map((num) => {
@@ -60,6 +64,20 @@ export default function Clock() {
         {/* Center Dot */}
         <div className="absolute w-3 h-3 bg-[#2d2d2d] rounded-full z-20 border-2 border-white" />
       </div>
+  );
+
+  if (simple) {
+      return (
+          <div className="flex items-center justify-center" style={{ width: `${8 * 4 * scale}px`, height: `${8 * 4 * scale}px` }}>
+              {ClockFace}
+          </div>
+      );
+  }
+
+  return (
+    <InteractiveCard className="flex flex-col items-center h-full relative !p-4 bg-[#fdfbf7]">
+        <h2 className="text-xl font-bold mb-4 font-handwriting">时钟</h2>
+        {ClockFace}
     </InteractiveCard>
   );
 }
