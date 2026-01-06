@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse, HTMLResponse
 from pydantic import BaseModel
 from ..llm.qwen import LLM
+from ...config.load_config import config
+import httpx
 from typing import Optional, List
 import asyncio
 import json
@@ -40,6 +42,40 @@ class MoodAlchemyResponse(BaseModel):
     mood_color: str
     mood_keyword: str
     soul_insight: str
+
+@router.get("/platform")
+async def llm_platform():
+    p = config.get("choose", {"llm": None}).get("llm", None)
+    details = {}
+    if p == "qwen":
+        details = {
+            "model": config.get("llm", {"qwen": {"model": None}}).get("qwen", {"model": None}).get("model", None)
+        }
+    if p == "ollama":
+        details = {
+            "base_url": config.get("llm", {"ollama": {"base_url": "http://localhost:11434"}}).get("ollama", {"base_url": "http://localhost:11434"}).get("base_url", "http://localhost:11434"),
+            "model": config.get("llm", {"ollama": {"model": None}}).get("ollama", {"model": None}).get("model", None)
+        }
+    return {"platform": p, "details": details}
+
+@router.get("/health")
+async def llm_health():
+    p = config.get("choose", {"llm": None}).get("llm", None)
+    if p == "qwen":
+        key = config.get("llm", {"qwen": {"api_key": None}}).get("qwen", {"api_key": None}).get("api_key", None)
+        model = config.get("llm", {"qwen": {"model": None}}).get("qwen", {"model": None}).get("model", None)
+        return {"platform": "qwen", "configured": bool(key and model)}
+    if p == "ollama":
+        base = config.get("llm", {"ollama": {"base_url": "http://localhost:11434"}}).get("ollama", {"base_url": "http://localhost:11434"}).get("base_url", "http://localhost:11434")
+        url = base.rstrip("/") + "/api/tags"
+        try:
+            async with httpx.AsyncClient(timeout=3) as client:
+                resp = await client.get(url)
+                ok = resp.status_code < 400
+                return {"platform": "ollama", "reachable": ok}
+        except Exception:
+            return {"platform": "ollama", "reachable": False}
+    return {"platform": None, "configured": False}
 
 @router.post("/mood-alchemy", response_model=MoodAlchemyResponse)
 async def mood_alchemy(request: TaskPlanRequest):

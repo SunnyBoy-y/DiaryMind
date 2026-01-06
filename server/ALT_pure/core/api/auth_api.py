@@ -6,11 +6,18 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from typing import Optional, Union
 from . import excel_auth
+import os
+import secrets
 
 router = APIRouter()
 
 # 配置
-SECRET_KEY = "your-secret-key-here-change-in-production"
+ENV = os.getenv("ENV", "").lower()
+IS_PRODUCTION = os.getenv("IS_PRODUCTION", "0") in {"1", "true", "True"}
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    # 开发环境使用临时密钥，避免将默认密钥暴露
+    SECRET_KEY = secrets.token_urlsafe(64)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -146,7 +153,7 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         expires=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         samesite="lax",
-        secure=False  # 开发环境非HTTPS设为False
+        secure=IS_PRODUCTION or ENV == "production"
     )
     
     return {
@@ -208,4 +215,4 @@ async def generate_diary_intro(
         
         return {"generated_intro": intro}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"生成前言失败: {str(e)}")
+        raise HTTPException(status_code=500, detail="生成前言失败")

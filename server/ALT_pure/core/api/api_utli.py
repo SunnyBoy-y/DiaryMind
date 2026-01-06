@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from . import tts_api, llm_api, asr_api, common_api, music_api, diary_api, process_api, auth_api
+from ALT_pure.config.load_config import config
+from pathlib import Path
+from datetime import datetime
 
 app = FastAPI(
     title="ALT系统API",
@@ -105,7 +108,18 @@ curl -X POST "http://localhost:8000/api/llm/stream-chat" \\
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    p = config.get("choose", {"llm": None}).get("llm", None)
+    try:
+        base_dir = Path(__file__).resolve().parent.parent.parent.parent
+    except Exception:
+        base_dir = Path.cwd()
+    index_path = base_dir / "data" / "diary_index.db"
+    return {
+        "status": "healthy",
+        "llm_platform": p,
+        "index_db_exists": index_path.exists(),
+        "time": datetime.now().isoformat()
+    }
 
 
 if __name__ == "__main__":
