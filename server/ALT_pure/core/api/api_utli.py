@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from . import tts_api, llm_api, asr_api, common_api, music_api, diary_api, process_api, auth_api
+try:
+    from server.rag.api.routes import router as rag_router
+except Exception:
+    rag_router = None
 from ALT_pure.config.load_config import config
 from pathlib import Path
 from datetime import datetime
@@ -30,6 +34,8 @@ app.include_router(music_api.router, prefix="/api/music", tags=["音乐接口"])
 app.include_router(diary_api.router, prefix="/api/diary", tags=["日记接口"])
 app.include_router(process_api.router, prefix="/api/process", tags=["流程接口"])
 app.include_router(auth_api.router, prefix="/api/auth", tags=["认证接口"])
+if rag_router is not None:
+    app.include_router(rag_router, prefix="/api/rag", tags=["RAG接口"])
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
