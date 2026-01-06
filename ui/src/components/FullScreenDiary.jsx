@@ -585,7 +585,7 @@ ${prevContent}`);
                       <div className="flex-1 border-b-2 border-black border-dashed mb-4 overflow-y-auto">
                         {structuredContent ? (
                           <div className="prose max-w-none font-handwriting text-lg">
-                            <div dangerouslySetInnerHTML={{ __html: structuredContent.replace(/\n/g, '<br>') }} />
+                            <ReactMarkdown className="prose max-w-none">{structuredContent}</ReactMarkdown>
                           </div>
                         ) : (
                           <p className="text-gray-400 italic text-center py-8">
@@ -831,15 +831,15 @@ ${prevContent}`);
                 </div>
                 <div className="flex-1 border-b-2 border-black border-dashed mb-4 overflow-y-auto">
                     {associations ? (
-                        <div className="prose max-w-none font-handwriting text-lg">
-                            <div dangerouslySetInnerHTML={{ __html: associations.replace(/\n/g, '<br>') }} />
+                          <div className="prose max-w-none font-handwriting text-lg">
+                            <ReactMarkdown className="prose max-w-none">{associations}</ReactMarkdown>
                             <button 
-                                onClick={() => handleApplyAssociation(associations)} 
-                                className="mt-4 px-3 py-1 border border-black rounded hover:bg-gray-100 transition-colors text-sm"
+                              onClick={() => handleApplyAssociation(associations)} 
+                              className="mt-4 px-3 py-1 border border-black rounded hover:bg-gray-100 transition-colors text-sm"
                             >
-                                应用所有联想
+                              应用所有联想
                             </button>
-                        </div>
+                          </div>
                     ) : (
                         <p className="text-gray-400 italic text-center py-8">
                             点击生成联想按钮，AI将为您提供相关的写作思路建议

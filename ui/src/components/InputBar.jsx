@@ -92,13 +92,18 @@ export default function InputBar({
   const containerClasses = "flex items-center gap-4 w-full mt-4";
   const inputWrapperClasses = "flex-1 transition-all duration-200 scale-100";
   const inputClasses = `
-    w-full border-2 border-black p-3 h-14 text-xl outline-none bg-transparent
-    focus:ring-2 focus:ring-black/50
+    w-full border-2 border-[#2d2d2d] p-3 h-14 text-xl outline-none bg-white font-handwriting
+    focus:border-[#ff9b9b] focus:shadow-[4px_4px_0px_0px_rgba(255,155,155,1)]
     transition-all duration-200
+    placeholder-gray-400
   `;
   const suggestionClasses = "absolute top-0 left-0 pointer-events-none z-0";
-  const suggestionTextClasses = "p-3 h-14 text-xl text-gray-400 select-none";
-  const buttonClasses = "border-2 border-black w-14 h-14 flex items-center justify-center bg-white hover:bg-gray-100 transition-colors";
+  const suggestionTextClasses = "p-3 h-14 text-xl text-gray-300 select-none font-handwriting";
+  const buttonClasses = `
+    border-2 border-[#2d2d2d] w-14 h-14 flex items-center justify-center bg-white 
+    hover:bg-[#ff9b9b] hover:text-white hover:border-[#ff9b9b] hover:shadow-[2px_2px_0px_0px_rgba(45,45,45,1)]
+    transition-all duration-200
+  `;
 
   return (
     <div className={containerClasses}>
@@ -115,6 +120,7 @@ export default function InputBar({
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             className={inputClasses}
+            style={{ borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px' }}
             placeholder={placeholder || ''}
           />
           
@@ -135,8 +141,9 @@ export default function InputBar({
         onClick={handleSend}
         className={buttonClasses}
         aria-label="Send message"
+        style={{ borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' }}
       >
-        <ArrowUp size={32} strokeWidth={2} />
+        <ArrowUp size={28} strokeWidth={2.5} />
       </button>
     </div>
   );

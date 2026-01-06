@@ -57,9 +57,11 @@ export default function Calendar() {
         <div 
             key={d} 
             className={`
-                text-center text-lg md:text-xl p-1
-                ${isToday ? 'bg-black text-white rounded-full' : 'hover:bg-gray-200 rounded-full cursor-pointer'}
+                text-center text-lg md:text-xl p-1 font-handwriting
+                flex items-center justify-center aspect-square
+                ${isToday ? 'bg-[#ff9b9b] text-white shadow-md transform scale-110' : 'hover:bg-[#f0f0f0] cursor-pointer text-[#2d2d2d]'}
             `}
+            style={{ borderRadius: isToday ? '30% 70% 70% 30% / 30% 30% 70% 70%' : '50%' }}
         >
           {d}
         </div>
@@ -69,31 +71,27 @@ export default function Calendar() {
   };
 
   return (
-    <InteractiveCard className="flex flex-col h-full !p-6">
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={prevMonth} className="p-1 hover:bg-gray-100 rounded">
+    <InteractiveCard className="flex flex-col h-full !p-6 bg-[#fdfbf7]">
+      <div className="flex items-center justify-between mb-4 font-handwriting">
+        <button onClick={prevMonth} className="p-1 hover:bg-black/5 rounded-full transition-colors">
             <ChevronLeft size={24} />
         </button>
-        <h2 className="text-2xl font-bold">
+        <h2 className="text-2xl font-bold text-[#2d2d2d]">
             {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
         </h2>
-        <button onClick={nextMonth} className="p-1 hover:bg-gray-100 rounded">
+        <button onClick={nextMonth} className="p-1 hover:bg-black/5 rounded-full transition-colors">
             <ChevronRight size={24} />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-1 mb-2 font-handwriting">
         {weekDays.map(d => (
-            <div key={d} className="text-center font-bold text-sm md:text-base text-gray-500">{d}</div>
+            <div key={d} className="text-center font-bold text-sm md:text-base text-gray-400">{d}</div>
         ))}
       </div>
       
       <div className="grid grid-cols-7 gap-1 flex-1 content-start">
          {renderCalendarDays()}
-      </div>
-
-      <div className="mt-auto text-center hidden md:block">
-          <h2 className="text-4xl">日历</h2>
       </div>
     </InteractiveCard>
   );

@@ -25,18 +25,25 @@ export default function TodoList({ todos = [], onUpdateTodo }) {
   };
 
   return (
-    <InteractiveCard className="flex flex-col h-full relative !p-4">
+    <InteractiveCard className="flex flex-col h-full relative !p-4 bg-[#fdfbf7]">
       <div className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
         {todos.length === 0 && (
-            <div className="text-gray-400 text-sm text-center mt-4">暂无待办事项</div>
+            <div className="text-gray-400 text-lg font-handwriting text-center mt-10 italic">
+                今天还没有任务哦~
+            </div>
         )}
         {todos.map((t) => {
           const currentDuration = t.active ? t.duration + (now - t.startTime) : t.duration;
           
           return (
-            <div key={t.id} className={`flex items-start gap-2 group ${t.completed ? 'opacity-50' : ''}`}>
+            <div key={t.id} className={`flex items-start gap-3 group transition-all duration-300 ${t.completed ? 'opacity-50' : ''}`}>
               <div 
-                className="mt-1 cursor-pointer hover:scale-110 transition-transform"
+                className={`
+                    mt-1 w-5 h-5 flex-shrink-0 cursor-pointer transition-all duration-200
+                    border-2 flex items-center justify-center
+                    ${t.completed ? 'bg-[#a8e6cf] border-[#a8e6cf]' : 'bg-transparent border-[#2d2d2d] hover:border-[#ff9b9b]'}
+                `}
+                style={{ borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px' }}
                 onClick={(e) => {
                     e.stopPropagation();
                     onUpdateTodo && onUpdateTodo(t.id, 'complete');
@@ -46,7 +53,7 @@ export default function TodoList({ todos = [], onUpdateTodo }) {
                     onUpdateTodo && onUpdateTodo(t.id, 'pause');
                 }}
               >
-                {t.completed ? <CheckSquare size={20} /> : <Square size={20} className="stroke-2" />}
+                {t.completed && <div className="text-white font-bold text-xs transform -rotate-6">✓</div>}
               </div>
               
               <div 
@@ -54,30 +61,24 @@ export default function TodoList({ todos = [], onUpdateTodo }) {
                 onClick={() => onUpdateTodo && onUpdateTodo(t.id, 'toggle-hidden')}
                 onDoubleClick={() => onUpdateTodo && onUpdateTodo(t.id, 'activate')}
               >
-                <div className="flex justify-between items-center">
-                    <span className={`text-lg leading-none text-break ${t.hidden || t.completed ? 'line-through text-gray-400' : ''} ${t.active ? 'font-bold' : ''}`}>
+                <div className="flex justify-between items-start">
+                    <span className={`text-xl font-handwriting leading-snug text-break transition-all duration-300 ${t.hidden || t.completed ? 'line-through text-gray-400 decoration-2 decoration-[#ff9b9b]/50' : 'text-[#2d2d2d]'} ${t.active ? 'font-bold text-[#ff9b9b]' : ''}`}>
                         {t.text}
                     </span>
                     {(t.active || t.duration > 0) && (
-                        <span className="text-xs font-mono bg-black text-white px-1 rounded flex items-center gap-1">
-                            {t.active && <Play size={8} fill="white" />}
-                            {!t.active && t.duration > 0 && <Pause size={8} fill="white" />}
+                        <span className={`text-xs font-mono px-2 py-0.5 rounded ml-2 flex items-center gap-1 shadow-sm transform rotate-2 ${t.active ? 'bg-[#ff9b9b] text-white' : 'bg-gray-200 text-gray-600'}`}>
+                            {t.active && <Play size={8} fill="currentColor" />}
+                            {!t.active && t.duration > 0 && <Pause size={8} fill="currentColor" />}
                             {formatDuration(currentDuration)}
                         </span>
                     )}
                 </div>
-                {/* Visual line for hidden state if we want something more than strike-through, 
-                    but strike-through is standard for "hidden as line". 
-                    User said "隐藏为横线状态", likely means collapsed to a line or just strike-through.
-                    If it means collapsed, maybe we hide the text and show a line? 
-                    Let's assume strike-through for now as it keeps context.
-                */}
               </div>
             </div>
           );
         })}
       </div>
-      <h2 className="text-xl font-bold mt-2 border-t border-black pt-2">待办</h2>
+      <h2 className="text-xl font-bold mt-2 border-t-2 border-[#2d2d2d]/10 pt-2 font-handwriting text-center text-[#2d2d2d]/50">待办</h2>
     </InteractiveCard>
   );
 }

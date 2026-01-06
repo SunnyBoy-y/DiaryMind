@@ -17,21 +17,22 @@ export default function Clock() {
   const numbers = Array.from({ length: 12 }, (_, i) => i + 1);
 
   return (
-    <InteractiveCard className="flex flex-col items-center h-full relative !p-4">
-        <h2 className="text-xl font-bold mb-4">时钟</h2>
-      <div className="relative w-32 h-32 border-2 border-black rounded-full flex items-center justify-center">
+    <InteractiveCard className="flex flex-col items-center h-full relative !p-4 bg-[#fdfbf7]">
+        <h2 className="text-xl font-bold mb-4 font-handwriting">时钟</h2>
+      <div className="relative w-32 h-32 border-2 border-[#2d2d2d] rounded-full flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(45,45,45,0.5)] bg-white"
+           style={{ borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%' }}> {/* Imperfect circle */}
         
         {/* Numbers */}
         {numbers.map((num) => {
           const angle = (num * 30 - 90) * (Math.PI / 180);
-          const radius = 55; // Slightly inside the 64px radius (w-32 = 128px diam)
+          const radius = 52; 
           const x = Math.cos(angle) * radius;
           const y = Math.sin(angle) * radius;
           
           return (
             <div
               key={num}
-              className="absolute text-xs font-bold"
+              className="absolute text-sm font-bold font-handwriting text-[#2d2d2d]"
               style={{
                 transform: `translate(${x}px, ${y}px)`,
               }}
@@ -43,21 +44,21 @@ export default function Clock() {
 
         {/* Hour Hand */}
         <div
-          className="absolute w-1 h-8 bg-black origin-bottom bottom-1/2 rounded-full z-10"
-          style={{ transform: `rotate(${hourRatio * 360}deg)` }}
+          className="absolute w-1.5 h-8 bg-[#2d2d2d] origin-bottom bottom-1/2 rounded-full z-10"
+          style={{ transform: `rotate(${hourRatio * 360}deg)`, borderRadius: '5px' }}
         />
         {/* Minute Hand */}
         <div
-          className="absolute w-0.5 h-12 bg-black origin-bottom bottom-1/2 rounded-full z-10"
-          style={{ transform: `rotate(${minuteRatio * 360}deg)` }}
+          className="absolute w-1 h-11 bg-[#2d2d2d] origin-bottom bottom-1/2 rounded-full z-10"
+          style={{ transform: `rotate(${minuteRatio * 360}deg)`, borderRadius: '5px' }}
         />
         {/* Second Hand */}
         <div
-          className="absolute w-0.5 h-14 bg-red-500 origin-bottom bottom-1/2 rounded-full z-10"
+          className="absolute w-0.5 h-12 bg-[#ff9b9b] origin-bottom bottom-1/2 rounded-full z-10"
           style={{ transform: `rotate(${secondRatio * 360}deg)` }}
         />
         {/* Center Dot */}
-        <div className="absolute w-2 h-2 bg-black rounded-full z-20" />
+        <div className="absolute w-3 h-3 bg-[#2d2d2d] rounded-full z-20 border-2 border-white" />
       </div>
     </InteractiveCard>
   );

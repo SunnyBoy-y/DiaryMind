@@ -14,6 +14,10 @@ import BombOverlay from './components/BombOverlay';
 import MusicPlayer from './components/MusicPlayer';
 import FlowMode from './components/FlowMode';
 import TimeMachine from './components/TimeMachine';
+import ExportView from './components/ExportView';
+import InsightCapsule from './components/InsightCapsule';
+import EchoesOfTime from './components/EchoesOfTime';
+import DocumentUploader from './components/DocumentUploader';
 import { Music as MusicIcon, X, Play, Pause, Calendar as CalendarIcon, LogOut } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
@@ -22,7 +26,7 @@ const AUTH_API_BASE = `${API_BASE}/auth`;
 
 function App() {
   const navigate = useNavigate();
-  const [currentView, setCurrentView] = useState('home'); // 'home' | 'collection' | 'fullscreen' | 'music' | 'timemachine'
+  const [currentView, setCurrentView] = useState('home'); // 'home' | 'collection' | 'fullscreen' | 'music' | 'timemachine' | 'export'
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBombActive, setIsBombActive] = useState(false);
   const [isFlowMode, setIsFlowMode] = useState(false);
@@ -31,7 +35,6 @@ function App() {
   const idleTimerRef = useRef(null);
   // 用户状态
   const [user, setUser] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   // Input Control State
   const [inputValue, setInputValue] = useState('');
@@ -47,6 +50,9 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSong, setCurrentSong] = useState(null);
   const audioRef = useRef(new Audio());
+  const [musicIconPos, setMusicIconPos] = useState({ x: 24, y: 24 });
+  const draggingMusicRef = useRef(false);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   // 获取当前用户信息
   useEffect(() => {
@@ -64,8 +70,6 @@ function App() {
       } catch (error) {
         console.error('Failed to fetch user:', error);
         navigate('/login');
-      } finally {
-        setIsLoadingUser(false);
       }
     };
 
@@ -100,24 +104,90 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('musicIconPos');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+          setMusicIconPos(parsed);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+  const startDragMusicIcon = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    draggingMusicRef.current = true;
+    const rect = e.currentTarget.getBoundingClientRect();
+    dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    window.addEventListener('mousemove', onDragMusicIcon);
+    window.addEventListener('mouseup', endDragMusicIcon);
+  };
+  const onDragMusicIcon = (e) => {
+    if (!draggingMusicRef.current) return;
+    const container = document.querySelector('.relative.w-full.max-w-5xl.z-10');
+    const bounds = container ? container.getBoundingClientRect() : document.body.getBoundingClientRect();
+    const x = clamp(e.clientX - bounds.left - dragOffsetRef.current.x, 0, bounds.width - 48);
+    const y = clamp(e.clientY - bounds.top - dragOffsetRef.current.y, 0, bounds.height - 48);
+    setMusicIconPos({ x, y });
+  };
+  const endDragMusicIcon = () => {
+    draggingMusicRef.current = false;
+    window.removeEventListener('mousemove', onDragMusicIcon);
+    window.removeEventListener('mouseup', endDragMusicIcon);
+    try { localStorage.setItem('musicIconPos', JSON.stringify(musicIconPos)); } catch {}
+  };
+
   // Handle song ending (Auto play next)
   useEffect(() => {
       const audio = audioRef.current;
       const handleEnded = () => {
           handleNextSong();
       };
+      const handleError = (e) => {
+          console.warn("Audio error", e);
+          setIsPlaying(false);
+      };
       audio.addEventListener('ended', handleEnded);
-      return () => audio.removeEventListener('ended', handleEnded);
+      audio.addEventListener('error', handleError);
+      return () => {
+        audio.removeEventListener('ended', handleEnded);
+        audio.removeEventListener('error', handleError);
+      };
   }); // Re-bind if handleNextSong changes, or use ref for handler
 
   const playSong = (song) => {
-    if (currentSong !== song) {
-        setCurrentSong(song);
-        audioRef.current.src = `${MUSIC_API_BASE}/stream/${song}`;
+    if (!playlist || playlist.length === 0) {
+      console.warn("No playlist available");
+      return;
     }
-    audioRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch(e => console.error("Play error", e));
+    if (!playlist.includes(song)) {
+      console.warn("Song not found in playlist:", song);
+      return;
+    }
+    const audio = audioRef.current;
+    try {
+      audio.pause();
+      setIsPlaying(false);
+      if (currentSong !== song) {
+        setCurrentSong(song);
+      }
+      audio.src = `${MUSIC_API_BASE}/stream/${encodeURIComponent(song)}`;
+      audio.load();
+      const onCanPlay = () => {
+        audio.play().then(() => setIsPlaying(true)).catch(err => {
+          console.error("Play error", err);
+          setIsPlaying(false);
+        });
+        audio.removeEventListener('canplay', onCanPlay);
+      };
+      audio.addEventListener('canplay', onCanPlay);
+    } catch (e) {
+      console.error("Play error", e);
+    }
   };
 
   const togglePlay = () => {
@@ -157,17 +227,7 @@ function App() {
       // setCurrentSong(null);
   };
 
-  useEffect(() => {
-    const fetchEncouragement = async () => {
-      // ... existing fetchEncouragement logic ...
-      try {
-        let prompt = "请直接给我一句简短的鼓励的话。请保持回答精简。";
-        // ... (rest of logic) ...
-        // Note: I am not replacing the inner logic here, just the useEffect structure to add Idle Timer
-      } catch(e) {}
-    };
-    // ...
-  }, []); // Keeping this as is, but adding new useEffect for Idle Timer
+  
 
   // Idle Timer Logic
   useEffect(() => {
@@ -268,6 +328,27 @@ function App() {
          setChatResponse('规划任务出错: ' + e.message);
        }
        return;
+    }
+
+    if (message.startsWith('# 问日记')) {
+        const query = message.replace('# 问日记', '').trim();
+        if (!query) return;
+
+        setIsChatting(true);
+        setChatResponse('正在翻阅日记...');
+        
+        try {
+            const response = await fetch('/api/diary/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+            const data = await response.json();
+            setChatResponse(data.reply || '未找到相关内容');
+        } catch (e) {
+            setChatResponse('记忆检索失败: ' + e.message);
+        }
+        return;
     }
     
     setIsChatting(true);
@@ -420,6 +501,9 @@ function App() {
       if (currentView === 'timemachine') {
           return <TimeMachine />;
       }
+      if (currentView === 'export') {
+          return <ExportView onBack={() => setCurrentView('home')} />;
+      }
       
       // Home View
       return (
@@ -446,37 +530,48 @@ function App() {
               </div>
             </div>
 
-            {/* Right Section: Calendar */}
-            <div className="md:col-span-5 h-full">
-              <Calendar />
+            {/* Right Section: Calendar and Smart Widgets */}
+            <div className="md:col-span-5 h-full flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2">
+              <InsightCapsule />
+              
+              <div className="flex-shrink-0">
+                 <Calendar />
+              </div>
+
+              <div className="flex-1 min-h-[200px]">
+                 <EchoesOfTime />
+              </div>
+
+              <DocumentUploader />
             </div>
 
           </div>
 
           {/* Task Proposal Display */}
           {taskProposal && (
-            <div className="w-full bg-white border-2 border-black p-4 mb-4 rounded shadow-lg z-20">
+            <div className="w-full bg-white border-2 border-[#2d2d2d] p-4 mb-4 shadow-[4px_4px_0px_0px_rgba(45,45,45,1)] z-20"
+                 style={{ borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px' }}>
                <div className="flex flex-col gap-2">
                   <div className="font-handwriting text-lg font-bold">任务规划建议</div>
-                  <div className="text-gray-600 italic">{taskProposal.suggestion}</div>
-                  <div className="border-t border-gray-200 my-2 pt-2">
+                  <div className="text-gray-600 italic font-handwriting">{taskProposal.suggestion}</div>
+                  <div className="border-t border-[#2d2d2d]/20 my-2 pt-2">
                      {taskProposal.schedule.map((item, i) => (
-                        <div key={i} className="flex justify-between text-sm">
+                        <div key={i} className="flex justify-between text-sm font-handwriting">
                            <span className="font-bold">{item.time}</span>
                            <span>{item.task}</span>
                         </div>
                      ))}
                   </div>
-                  <div className="flex justify-end gap-2 mt-2">
+                  <div className="flex justify-end gap-2 mt-2 font-handwriting">
                      <button 
                         onClick={() => setTaskProposal(null)}
-                        className="px-4 py-1 border border-black hover:bg-gray-100"
+                        className="px-4 py-1 border-2 border-[#2d2d2d] hover:bg-gray-100 rounded-lg transition-all"
                      >
                         取消
                      </button>
                      <button 
                         onClick={handleAcceptPlan}
-                        className="px-4 py-1 bg-black text-white border border-black hover:bg-gray-800"
+                        className="px-4 py-1 bg-[#2d2d2d] text-white border-2 border-[#2d2d2d] hover:bg-[#4a4a4a] rounded-lg transition-all"
                      >
                         接受
                      </button>
@@ -489,8 +584,11 @@ function App() {
           {moodResult && (
             <div className="w-full mb-4 z-20 relative animate-fade-in">
                <div 
-                 className="p-6 rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-white relative overflow-hidden"
-                 style={{ backgroundColor: moodResult.mood_color }}
+                 className="p-6 border-2 border-[#2d2d2d] shadow-[4px_4px_0px_0px_rgba(45,45,45,1)] text-white relative overflow-hidden"
+                 style={{ 
+                    backgroundColor: moodResult.mood_color,
+                    borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px'
+                 }}
                >
                   <div className="relative z-10">
                       <div className="flex justify-between items-start mb-4">
@@ -505,7 +603,7 @@ function App() {
                       <p className="text-xl font-handwriting italic text-center my-4">
                           "{moodResult.soul_insight}"
                       </p>
-                      <div className="text-right text-xs opacity-70 mt-4">
+                      <div className="text-right text-xs opacity-70 mt-4 font-handwriting">
                           今日情绪胶囊
                       </div>
                   </div>
@@ -518,7 +616,8 @@ function App() {
 
           {/* Chat Response Display */}
           {(isChatting && chatResponse) && (
-             <div className="w-full bg-white border-2 border-black p-4 mb-4 rounded shadow-lg max-h-40 overflow-y-auto z-20">
+             <div className="w-full bg-white border-2 border-[#2d2d2d] p-4 mb-4 shadow-[4px_4px_0px_0px_rgba(45,45,45,1)] max-h-40 overflow-y-auto z-20"
+                  style={{ borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px' }}>
                <div className="flex justify-between items-start">
                   <div className="font-handwriting text-lg whitespace-pre-wrap text-break">{chatResponse}</div>
                   <button onClick={() => setIsChatting(false)} className="text-gray-500 hover:text-black ml-4">x</button>
@@ -534,7 +633,7 @@ function App() {
             onChange={handleInputChange}
             suggestionSuffix={suggestionSuffix}
             onAcceptSuggestion={handleAcceptSuggestion}
-            placeholder="输入 '# 任务' 开始规划..."
+            placeholder="输入 '# 任务' 规划，'# 心情' 分析，'# 问日记' 回忆..."
           />
           
         </div>
@@ -562,13 +661,13 @@ function App() {
         {/* User Info and Logout - Positioned at top right */}
         <div className="absolute -top-12 right-0 z-30 flex items-center gap-4">
           {user && (
-            <div className="bg-white border-2 border-black px-3 py-1 rounded-full text-sm font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+            <div className="bg-white border-2 border-[#2d2d2d] px-3 py-1 rounded-full text-sm font-bold font-handwriting shadow-[3px_3px_0px_0px_rgba(45,45,45,1)]">
               {user.username}
             </div>
           )}
           <button 
             onClick={handleLogout}
-            className="bg-white border-2 border-black p-2 rounded-full hover:bg-gray-100 transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transform hover:-translate-x-0.5 hover:-translate-y-0.5"
+            className="bg-white border-2 border-[#2d2d2d] p-2 rounded-full hover:bg-gray-100 transition-all shadow-[3px_3px_0px_0px_rgba(45,45,45,1)] hover:shadow-[1px_1px_0px_0px_rgba(45,45,45,1)] transform hover:-translate-x-0.5 hover:-translate-y-0.5"
             title="退出登录"
           >
             <LogOut size={20} />
@@ -580,14 +679,16 @@ function App() {
           <SidebarButton />
         </div>
 
-        {/* Music Playing Icon - Show when playing and not in music view */}
+        {/* Music Playing Icon - draggable and non-blocking */}
         {isPlaying && currentView !== 'music' && (
-            <div 
-                className="absolute -top-12 left-14 md:-left-20 md:top-14 z-30 w-12 h-12 bg-white border-2 border-black flex items-center justify-center rounded-full cursor-pointer hover:bg-gray-100 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                onClick={stopMusic}
-                title="点击停止播放"
+            <div
+                className="absolute z-30 w-12 h-12 bg-white border-2 border-[#2d2d2d] flex items-center justify-center rounded-full cursor-move hover:bg-[#ff9b9b] hover:text-white hover:border-[#ff9b9b] transition-all shadow-[4px_4px_0px_0px_rgba(45,45,45,1)]"
+                style={{ left: musicIconPos.x, top: musicIconPos.y, borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%' }}
+                onMouseDown={startDragMusicIcon}
+                onDoubleClick={stopMusic}
+                title="拖动或双击停止播放"
             >
-                <div className="animate-spin [animation-duration:3s]">
+                <div className="animate-spin [animation-duration:3s] pointer-events-none">
                    <MusicIcon size={20} />
                 </div>
             </div>
@@ -611,7 +712,13 @@ function App() {
         </div>
 
 
-        <div className="w-full border-2 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] h-[700px] flex flex-col z-10 relative">
+        <div 
+            className="w-full bg-white p-6 h-[700px] flex flex-col z-10 relative card"
+            style={{ 
+                borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px',
+                boxShadow: '8px 8px 0px 0px rgba(45,45,45,1)'
+            }}
+        >
           {renderContent()}
         </div>
       </div>

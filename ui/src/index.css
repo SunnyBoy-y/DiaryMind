@@ -9,11 +9,11 @@
   --color-success: #a8e6cf;
   --color-warning: #ffda79;
   --color-info: #dcedc1;
-  --color-background: #fcfcfc;
+  --color-background: #fdfbf7; /* Slightly warmer paper color */
   --color-card: #ffffff;
-  --color-text: #333333;
+  --color-text: #2d2d2d; /* Softer black */
   --color-text-light: #666666;
-  --color-border: #e0e0e0;
+  --color-border: #2d2d2d;
 }
 
 :root {
@@ -24,6 +24,8 @@
 
 body {
     background-color: var(--color-background);
+    background-image: radial-gradient(#e5e5e5 1px, transparent 1px);
+    background-size: 20px 20px;
 } 
 
 .font-handwriting {
@@ -34,19 +36,20 @@ body {
 .card {
   background-color: var(--color-card);
   border: 2px solid var(--color-border);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* Irregular border radius for hand-drawn look */
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  box-shadow: 4px 4px 0px 0px rgba(45, 45, 45, 1);
   transition: all 0.3s ease;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 6px 6px 0px 0px rgba(45, 45, 45, 1);
 }
 
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -54,78 +57,47 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--color-primary);
-  border-radius: 3px;
+  background-color: #ddd;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #ff7f7f;
+  background-color: #bbb;
 }
 
 /* 统一按钮样式 */
 .btn {
-  border: 2px solid var(--color-primary);
-  background-color: var(--color-background);
-  color: var(--color-primary);
+  border: 2px solid var(--color-border);
+  background-color: var(--color-card);
+  color: var(--color-text);
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 2px 2px 0px 0px rgba(45, 45, 45, 1);
 }
 
 .btn:hover {
-  background-color: var(--color-primary);
-  color: white;
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px 0px rgba(45, 45, 45, 1);
+}
+
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: 1px 1px 0px 0px rgba(45, 45, 45, 1);
 }
 
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
+  border-color: var(--color-border);
 }
 
 .btn-primary:hover {
-  background-color: #ff7f7f;
-}
-
-.btn-secondary {
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-secondary);
-  color: white;
-}
-
-.btn-success {
-  border-color: var(--color-success);
-  color: var(--color-success);
-}
-
-.btn-success:hover {
-  background-color: var(--color-success);
-  color: white;
-}
-
-.btn-warning {
-  border-color: var(--color-warning);
-  color: var(--color-warning);
-}
-
-.btn-warning:hover {
-  background-color: var(--color-warning);
-  color: white;
-}
-
-.btn-info {
-  border-color: var(--color-info);
-  color: var(--color-info);
-}
-
-.btn-info:hover {
-  background-color: var(--color-info);
-  color: white;
+  background-color: #ff8585;
 }
 
 /* Text Overflow Utilities */

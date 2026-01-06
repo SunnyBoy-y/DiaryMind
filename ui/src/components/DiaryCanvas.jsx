@@ -5,9 +5,11 @@ import InteractiveCard from './InteractiveCard';
 const DiaryCanvas = ({ children, controls }) => {
   const [canvasPos, setCanvasPos] = useState({ x: 0, y: 0 });
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
-  const [canvasSize, setCanvasSize] = useState({ width: 2000, height: 2000 });
+  const [canvasSize, setCanvasSize] = useState({ width: 4000, height: 4000 });
+  const [sizePanelOpen, setSizePanelOpen] = useState(false);
+  const [sizeInput, setSizeInput] = useState({ width: 4000, height: 4000 });
   const canvasRef = useRef(null);
-  const dragRef = useRef(null);
+  const draggableCanvasRef = useRef(null);
 
   // 处理画布拖拽
   const handleCanvasDrag = (e, data) => {
@@ -27,22 +29,34 @@ const DiaryCanvas = ({ children, controls }) => {
     setIsDraggingCanvas(false);
   };
 
-  // 自动调整画布大小
-  const adjustCanvasSize = () => {
-    if (canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      setCanvasSize({
-        width: rect.width * 2,
-        height: rect.height * 2
-      });
+  const openSizePanel = () => {
+    setSizePanelOpen(true);
+  };
+  const applyCanvasSize = () => {
+    const w = Number(sizeInput.width);
+    const h = Number(sizeInput.height);
+    if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) {
+      const next = { width: w, height: h };
+      setCanvasSize(next);
+      try { localStorage.setItem('diaryCanvasSize', JSON.stringify(next)); } catch {}
     }
+    setSizePanelOpen(false);
+  };
+  const cancelSizePanel = () => {
+    setSizePanelOpen(false);
   };
 
-  // 监听窗口大小变化，调整画布大小
   useEffect(() => {
-    adjustCanvasSize();
-    window.addEventListener('resize', adjustCanvasSize);
-    return () => window.removeEventListener('resize', adjustCanvasSize);
+    try {
+      const saved = localStorage.getItem('diaryCanvasSize');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed?.width === 'number' && typeof parsed?.height === 'number') {
+          setCanvasSize(parsed);
+          setSizeInput(parsed);
+        }
+      }
+    } catch {}
   }, []);
 
   return (
@@ -55,12 +69,13 @@ const DiaryCanvas = ({ children, controls }) => {
     >
       {/* 无限画布 */}
       <DraggableCore
-        ref={dragRef}
+        nodeRef={draggableCanvasRef}
         onDrag={handleCanvasDrag}
         onStart={handleCanvasDragStart}
         onStop={handleCanvasDragStop}
       >
         <div 
+          ref={draggableCanvasRef}
           className="absolute"
           style={{
             width: canvasSize.width,
@@ -97,7 +112,7 @@ const DiaryCanvas = ({ children, controls }) => {
           重置视图
         </button>
         <button 
-          onClick={adjustCanvasSize}
+          onClick={openSizePanel}
           className="px-3 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 transition-colors text-sm font-medium"
         >
           调整大小
@@ -108,6 +123,37 @@ const DiaryCanvas = ({ children, controls }) => {
           </div>
         )}
       </div>
+      {sizePanelOpen && (
+        <div className="absolute bottom-16 right-4 bg-white border border-gray-300 rounded shadow p-3 flex flex-col gap-2 w-56">
+          <div className="text-sm font-medium">设置画布尺寸</div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">宽</span>
+            <input
+              type="number"
+              value={sizeInput.width}
+              onChange={(e) => setSizeInput(prev => ({ ...prev, width: e.target.value }))}
+              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+              min={500}
+              step={100}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">高</span>
+            <input
+              type="number"
+              value={sizeInput.height}
+              onChange={(e) => setSizeInput(prev => ({ ...prev, height: e.target.value }))}
+              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+              min={500}
+              step={100}
+            />
+          </div>
+          <div className="flex justify-end gap-2 mt-2">
+            <button onClick={cancelSizePanel} className="px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">取消</button>
+            <button onClick={applyCanvasSize} className="px-3 py-1 bg-black text-white rounded text-sm hover:bg-gray-800">应用</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -116,6 +162,7 @@ const DiaryCanvas = ({ children, controls }) => {
 const DraggableCard = ({ children, className = '', initialPosition = { x: 0, y: 0 } }) => {
   const [position, setPosition] = useState(initialPosition);
   const [zIndex, setZIndex] = useState(1);
+  const nodeRef = useRef(null);
 
   const handleDrag = (e, data) => {
     setPosition({
@@ -130,10 +177,12 @@ const DraggableCard = ({ children, className = '', initialPosition = { x: 0, y: 
 
   return (
     <DraggableCore
+      nodeRef={nodeRef}
       onDrag={handleDrag}
       onStart={handleDragStart}
     >
       <div 
+        ref={nodeRef}
         className={`absolute transition-all duration-200 ${className}`}
         style={{
           left: position.x,
