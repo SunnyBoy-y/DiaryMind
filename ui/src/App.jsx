@@ -585,7 +585,7 @@ function App() {
                     {/* Input Section */}
                     <div className="w-full max-w-3xl z-20">
                         <InputBar 
-                          onFullScreenMode={() => setCurrentView('fullscreen')} 
+                          onFullScreenMode={isGuest ? undefined : () => setCurrentView('fullscreen')} 
                           onSendMessage={handleSendMessage}
                           value={inputValue}
                           onChange={handleInputChange}
@@ -625,22 +625,23 @@ function App() {
                         </div>
 
                         {/* Widget 2: Recent Memory (Diary) */}
-                        <div 
-                            className="bg-white/80 backdrop-blur-sm border-2 border-[#2d2d2d] p-6 flex flex-col gap-2 hover:shadow-[4px_4px_0px_0px_rgba(45,45,45,1)] transition-all cursor-pointer group h-40"
-                            style={{ borderRadius: '15px 25px 15px 20px' }}
-                            onClick={() => setCurrentView('collection')}
-                        >
-                            <div className="flex items-center gap-2 text-gray-500 font-bold font-handwriting">
-                                <div className="w-3 h-3 rounded-full bg-[#a8d8ea]"></div>
-                                <span>最近回忆</span>
-                            </div>
-                            <div className="flex-1 flex items-center justify-center">
-                                <div className="text-lg text-gray-600 font-handwriting text-center group-hover:text-black transition-colors line-clamp-2">
-                                    {/* Ideally we fetch the latest diary title here, for now placeholder or generic */}
-                                    点击查看日记本
-                                </div>
-                            </div>
-                        </div>
+                        {!isGuest && (
+                          <div 
+                              className="bg-white/80 backdrop-blur-sm border-2 border-[#2d2d2d] p-6 flex flex-col gap-2 hover:shadow-[4px_4px_0px_0px_rgba(45,45,45,1)] transition-all cursor-pointer group h-40"
+                              style={{ borderRadius: '15px 25px 15px 20px' }}
+                              onClick={() => setCurrentView('collection')}
+                          >
+                              <div className="flex items-center gap-2 text-gray-500 font-bold font-handwriting">
+                                  <div className="w-3 h-3 rounded-full bg-[#a8d8ea]"></div>
+                                  <span>最近回忆</span>
+                              </div>
+                              <div className="flex-1 flex items-center justify-center">
+                                  <div className="text-lg text-gray-600 font-handwriting text-center group-hover:text-black transition-colors line-clamp-2">
+                                      点击查看日记本
+                                  </div>
+                              </div>
+                          </div>
+                        )}
 
                         {/* Widget 3: Quick Stats / Music */}
                         <div 
@@ -670,24 +671,28 @@ function App() {
 
                     {/* Footer Quick Links */}
                     <div className="flex gap-12 mt-8 opacity-60 hover:opacity-100 transition-opacity">
-                        <button onClick={() => setCurrentView('collection')} className="flex flex-col items-center gap-2 group">
-                             <div className="p-3 border-2 border-transparent group-hover:border-[#2d2d2d] rounded-full transition-all">
-                                <CalendarIcon size={24} />
-                             </div>
-                             <span className="font-handwriting text-sm">日记本</span>
-                        </button>
+                        {!isGuest && (
+                          <button onClick={() => setCurrentView('collection')} className="flex flex-col items-center gap-2 group">
+                               <div className="p-3 border-2 border-transparent group-hover:border-[#2d2d2d] rounded-full transition-all">
+                                  <CalendarIcon size={24} />
+                               </div>
+                               <span className="font-handwriting text-sm">日记本</span>
+                          </button>
+                        )}
                         <button onClick={() => setCurrentView('timemachine')} className="flex flex-col items-center gap-2 group">
                              <div className="p-3 border-2 border-transparent group-hover:border-[#2d2d2d] rounded-full transition-all">
                                 <Play size={24} className="transform rotate-90" />
                              </div>
                              <span className="font-handwriting text-sm">时光机</span>
                         </button>
-                        <button onClick={() => setCurrentView('export')} className="flex flex-col items-center gap-2 group">
-                             <div className="p-3 border-2 border-transparent group-hover:border-[#2d2d2d] rounded-full transition-all">
-                                <LogOut size={24} className="transform rotate-180" /> 
-                             </div>
-                             <span className="font-handwriting text-sm">导出</span>
-                        </button>
+                        {!isGuest && (
+                          <button onClick={() => setCurrentView('export')} className="flex flex-col items-center gap-2 group">
+                               <div className="p-3 border-2 border-transparent group-hover:border-[#2d2d2d] rounded-full transition-all">
+                                  <LogOut size={24} className="transform rotate-180" /> 
+                               </div>
+                               <span className="font-handwriting text-sm">导出</span>
+                          </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -702,13 +707,21 @@ function App() {
             {/* Left Section */}
             <div className="md:col-span-7 flex flex-col gap-6">
               
-              {/* Top Row: Clock and Diary */}
+              {/* Top Row: Clock and Diary (visitor hidden) */}
               <div className="grid grid-cols-2 gap-6 flex-1">
                 <div className="h-full">
                   <Clock />
                 </div>
-                <div className="h-full" onClick={() => setCurrentView('collection')}>
-                  <DiaryList />
+                <div className="h-full">
+                  {isGuest ? (
+                    <div className="card h-full flex items-center justify-center">
+                      <div className="text-gray-500 font-handwriting">访客模式：暂不提供日记列表</div>
+                    </div>
+                  ) : (
+                    <div onClick={() => setCurrentView('collection')}>
+                      <DiaryList />
+                    </div>
+                  )}
                 </div>
               </div>
 
