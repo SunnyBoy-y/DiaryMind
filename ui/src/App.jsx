@@ -18,7 +18,7 @@ import ExportView from './components/ExportView';
 import InsightCapsule from './components/InsightCapsule';
 import EchoesOfTime from './components/EchoesOfTime';
 import DocumentUploader from './components/DocumentUploader';
-import { Music as MusicIcon, X, Play, Pause, Calendar as CalendarIcon, LogOut } from 'lucide-react';
+import { Music as MusicIcon, X, Play, Pause, Calendar as CalendarIcon, LogOut, Settings, LogIn } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 const MUSIC_API_BASE = `${API_BASE}/music`;
@@ -27,6 +27,10 @@ const AUTH_API_BASE = `${API_BASE}/auth`;
 function App() {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState('home'); // 'home' | 'collection' | 'fullscreen' | 'music' | 'timemachine' | 'export'
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
+  const [isGuest, setIsGuest] = useState(() => {
+    try { return localStorage.getItem('isGuest') === 'true'; } catch { return false; }
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBombActive, setIsBombActive] = useState(false);
   const [isFlowMode, setIsFlowMode] = useState(false);
@@ -57,6 +61,10 @@ function App() {
   // 获取当前用户信息
   useEffect(() => {
     const fetchCurrentUser = async () => {
+      if (isGuest) {
+        setUser(null);
+        return;
+      }
       try {
         const response = await fetch(`${AUTH_API_BASE}/me`);
 
@@ -74,7 +82,7 @@ function App() {
     };
 
     fetchCurrentUser();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   // 登出函数
   const handleLogout = async () => {
@@ -86,6 +94,7 @@ function App() {
       console.error('Logout failed:', error);
     } finally {
       setUser(null);
+      try { localStorage.removeItem('isGuest'); } catch {}
       navigate('/login');
     }
   };
@@ -472,6 +481,8 @@ function App() {
   };
 
   const handleNavigate = (view) => {
+      const restrictedForGuest = new Set(['fullscreen', 'collection', 'export']);
+      if (isGuest && restrictedForGuest.has(view)) return;
       setCurrentView(view);
       // Sidebar persistence: don't close menu automatically
       // setIsMenuOpen(false);
@@ -479,9 +490,29 @@ function App() {
 
   const renderContent = () => {
       if (currentView === 'fullscreen') {
+          if (isGuest) {
+            return (
+              <div className="flex items-center justify-center h-full">
+                <div className="p-8 border-2 border-[#2d2d2d] rounded-xl text-center card">
+                  <div className="text-2xl font-handwriting mb-2">访客模式</div>
+                  <div className="text-gray-500 font-handwriting">当前为访客模式，暂不可写日记</div>
+                </div>
+              </div>
+            );
+          }
           return <FullScreenDiary />;
       }
       if (currentView === 'collection') {
+          if (isGuest) {
+            return (
+              <div className="flex items-center justify-center h-full">
+                <div className="p-8 border-2 border-[#2d2d2d] rounded-xl text-center card">
+                  <div className="text-2xl font-handwriting mb-2">访客模式</div>
+                  <div className="text-gray-500 font-handwriting">访客无法查看日记集</div>
+                </div>
+              </div>
+            );
+          }
           return <DiaryCollection 
             onBack={() => setCurrentView('home')} 
             onCreateNew={() => setCurrentView('fullscreen')}
@@ -502,10 +533,167 @@ function App() {
           return <TimeMachine />;
       }
       if (currentView === 'export') {
+          if (isGuest) {
+            return (
+              <div className="flex items-center justify-center h-full">
+                <div className="p-8 border-2 border-[#2d2d2d] rounded-xl text-center card">
+                  <div className="text-2xl font-handwriting mb-2">访客模式</div>
+                  <div className="text-gray-500 font-handwriting">访客不可使用导出功能</div>
+                </div>
+              </div>
+            );
+          }
           return <ExportView onBack={() => setCurrentView('home')} />;
       }
       
-      // Home View
+      // Home View (Focus/Simple Mode)
+      if (isSimpleMode) {
+        return (
+            <div className="flex flex-col h-full relative animate-fade-in">
+                {/* Header Area */}
+                <div className="flex justify-between items-center p-8">
+                    <div className="flex gap-4">
+                         {/* Optional: Add Date or Welcome Text here */}
+                         <div className="text-2xl font-handwriting font-bold text-gray-400">
+                            {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
+                         </div>
+                    </div>
+                    {/* Right side controls (User, Settings) are absolute positioned in parent, but we can add more here if needed */}
+                </div>
+
+                {/* Main Content Area - Centered */}
+                <div className="flex-1 flex flex-col items-center justify-center w-full max-w-6xl mx-auto gap-10 px-4">
+                    
+                    {/* Hero Section: Greeting */}
+                    <div className="flex flex-col items-center gap-6 py-10">
+                        <h1 className="text-7xl font-handwriting font-bold text-[#2d2d2d] animate-fade-in-up">
+                            {(() => {
+                                const hour = new Date().getHours();
+                                if (hour < 5) return '夜深了';
+                                if (hour < 11) return '早上好';
+                                if (hour < 13) return '中午好';
+                                if (hour < 18) return '下午好';
+                                return '晚上好';
+                            })()}，
+                            <span className="text-[#ff9b9b]">{user ? user.username : '朋友'}</span>
+                        </h1>
+                        <div className="text-2xl font-handwriting text-gray-400 animate-fade-in-up delay-100">
+                            准备好开始新的记录了吗？
+                        </div>
+                    </div>
+
+                    {/* Input Section */}
+                    <div className="w-full max-w-3xl z-20">
+                        <InputBar 
+                          onFullScreenMode={() => setCurrentView('fullscreen')} 
+                          onSendMessage={handleSendMessage}
+                          value={inputValue}
+                          onChange={handleInputChange}
+                          suggestionSuffix={suggestionSuffix}
+                          onAcceptSuggestion={handleAcceptSuggestion}
+                          placeholder="输入 '# 任务' 规划，'# 心情' 分析，'# 问日记' 回忆..."
+                        />
+                    </div>
+
+                    {/* Adaptive Widget Grid */}
+                    <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                        
+                        {/* Widget 1: Focus Task */}
+                        <div 
+                            className="bg-white/80 backdrop-blur-sm border-2 border-[#2d2d2d] p-6 flex flex-col gap-2 hover:shadow-[4px_4px_0px_0px_rgba(45,45,45,1)] transition-all cursor-pointer group h-40"
+                            style={{ borderRadius: '20px 15px 25px 15px' }}
+                            onClick={() => {
+                                // If clicked, maybe expand or go to full list? 
+                                // For now, just a visual indicator
+                            }}
+                        >
+                            <div className="flex items-center gap-2 text-gray-500 font-bold font-handwriting">
+                                <div className="w-3 h-3 rounded-full bg-[#ff9b9b]"></div>
+                                <span>当前专注</span>
+                            </div>
+                            <div className="flex-1 flex items-center justify-center">
+                                {activeTask ? (
+                                    <div className="text-2xl font-bold font-handwriting text-center text-[#2d2d2d] group-hover:scale-105 transition-transform">
+                                        {activeTask.text}
+                                    </div>
+                                ) : (
+                                    <div className="text-lg text-gray-400 font-handwriting italic">
+                                        暂无进行中的任务
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Widget 2: Recent Memory (Diary) */}
+                        <div 
+                            className="bg-white/80 backdrop-blur-sm border-2 border-[#2d2d2d] p-6 flex flex-col gap-2 hover:shadow-[4px_4px_0px_0px_rgba(45,45,45,1)] transition-all cursor-pointer group h-40"
+                            style={{ borderRadius: '15px 25px 15px 20px' }}
+                            onClick={() => setCurrentView('collection')}
+                        >
+                            <div className="flex items-center gap-2 text-gray-500 font-bold font-handwriting">
+                                <div className="w-3 h-3 rounded-full bg-[#a8d8ea]"></div>
+                                <span>最近回忆</span>
+                            </div>
+                            <div className="flex-1 flex items-center justify-center">
+                                <div className="text-lg text-gray-600 font-handwriting text-center group-hover:text-black transition-colors line-clamp-2">
+                                    {/* Ideally we fetch the latest diary title here, for now placeholder or generic */}
+                                    点击查看日记本
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Widget 3: Quick Stats / Music */}
+                        <div 
+                            className="bg-white/80 backdrop-blur-sm border-2 border-[#2d2d2d] p-6 flex flex-col gap-2 hover:shadow-[4px_4px_0px_0px_rgba(45,45,45,1)] transition-all cursor-pointer group h-40"
+                            style={{ borderRadius: '25px 15px 20px 15px' }}
+                            onClick={() => setCurrentView('music')}
+                        >
+                            <div className="flex items-center gap-2 text-gray-500 font-bold font-handwriting">
+                                <div className="w-3 h-3 rounded-full bg-[#aa96da]"></div>
+                                <span>氛围</span>
+                            </div>
+                            <div className="flex-1 flex items-center justify-center">
+                                {isPlaying && currentSong ? (
+                                    <div className="flex flex-col items-center gap-1">
+                                         <div className="animate-pulse text-[#2d2d2d] font-bold font-handwriting">{currentSong}</div>
+                                         <div className="text-xs text-gray-400">正在播放</div>
+                                    </div>
+                                ) : (
+                                    <div className="text-lg text-gray-400 font-handwriting italic group-hover:text-black">
+                                        播放点音乐?
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* Footer Quick Links */}
+                    <div className="flex gap-12 mt-8 opacity-60 hover:opacity-100 transition-opacity">
+                        <button onClick={() => setCurrentView('collection')} className="flex flex-col items-center gap-2 group">
+                             <div className="p-3 border-2 border-transparent group-hover:border-[#2d2d2d] rounded-full transition-all">
+                                <CalendarIcon size={24} />
+                             </div>
+                             <span className="font-handwriting text-sm">日记本</span>
+                        </button>
+                        <button onClick={() => setCurrentView('timemachine')} className="flex flex-col items-center gap-2 group">
+                             <div className="p-3 border-2 border-transparent group-hover:border-[#2d2d2d] rounded-full transition-all">
+                                <Play size={24} className="transform rotate-90" />
+                             </div>
+                             <span className="font-handwriting text-sm">时光机</span>
+                        </button>
+                        <button onClick={() => setCurrentView('export')} className="flex flex-col items-center gap-2 group">
+                             <div className="p-3 border-2 border-transparent group-hover:border-[#2d2d2d] rounded-full transition-all">
+                                <LogOut size={24} className="transform rotate-180" /> 
+                             </div>
+                             <span className="font-handwriting text-sm">导出</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+      }
+
       return (
         <div className="flex flex-col gap-6 h-full flex-1">
           {/* Main Grid Area */}
@@ -645,7 +833,7 @@ function App() {
   const nextTask = activeTaskIndex !== -1 && activeTaskIndex < todos.length - 1 ? todos[activeTaskIndex + 1] : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 bg-[radial-gradient(#ccc_1px,transparent_1px)] [background-size:20px_20px] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className={`min-h-screen bg-gray-50 bg-[radial-gradient(#ccc_1px,transparent_1px)] [background-size:20px_20px] flex items-center justify-center relative overflow-hidden transition-all duration-500 ${isSimpleMode ? 'p-0' : 'p-4'}`}>
       
       {isFlowMode && (
           <FlowMode 
@@ -657,14 +845,23 @@ function App() {
 
       <BombOverlay isActive={isBombActive} onComplete={() => setIsBombActive(false)} />
 
-      <div className="relative w-full max-w-5xl z-10">
+      <div className={`relative w-full z-10 transition-all duration-500 ${isSimpleMode ? 'h-screen' : 'max-w-5xl'}`}>
         {/* User Info and Logout - Positioned at top right */}
-        <div className="absolute -top-12 right-0 z-30 flex items-center gap-4">
+        <div className={`absolute z-30 flex items-center gap-4 transition-all duration-500 ${isSimpleMode ? 'top-6 right-6' : '-top-12 right-0'}`}>
           {user && (
             <div className="bg-white border-2 border-[#2d2d2d] px-3 py-1 rounded-full text-sm font-bold font-handwriting shadow-[3px_3px_0px_0px_rgba(45,45,45,1)]">
               {user.username}
             </div>
           )}
+          
+          <button 
+            onClick={() => setIsSimpleMode(!isSimpleMode)}
+            className="bg-white border-2 border-[#2d2d2d] p-2 rounded-full hover:bg-gray-100 transition-all shadow-[3px_3px_0px_0px_rgba(45,45,45,1)] hover:shadow-[1px_1px_0px_0px_rgba(45,45,45,1)] transform hover:-translate-x-0.5 hover:-translate-y-0.5"
+            title={isSimpleMode ? "切换到仪表盘模式" : "切换到专注模式"}
+          >
+            <Settings size={20} />
+          </button>
+
           <button 
             onClick={handleLogout}
             className="bg-white border-2 border-[#2d2d2d] p-2 rounded-full hover:bg-gray-100 transition-all shadow-[3px_3px_0px_0px_rgba(45,45,45,1)] hover:shadow-[1px_1px_0px_0px_rgba(45,45,45,1)] transform hover:-translate-x-0.5 hover:-translate-y-0.5"
@@ -675,7 +872,7 @@ function App() {
         </div>
 
         {/* Sidebar Button - Positioned outside */}
-        <div className="absolute -top-12 left-0 md:-left-20 md:top-0 z-30" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+        <div className={`absolute z-30 transition-all duration-500 ${isSimpleMode ? 'top-6 left-6' : '-top-12 left-0 md:-left-20 md:top-0'}`} onClick={() => setIsMenuOpen(!isMenuOpen)}>
           <SidebarButton />
         </div>
 
@@ -694,16 +891,13 @@ function App() {
             </div>
         )}
 
-        {/* Sidebar Menu - Now positioned relative to the button wrapper if we want, or absolute like before */}
-        {/* Since SidebarButton is absolute -top-12 left-0, SidebarMenu should be visually below it */}
-        {/* The SidebarMenu component itself has 'absolute top-16 left-0' style, which is relative to the container 'relative w-full max-w-5xl z-10' */}
-        {/* But wait, the SidebarButton is inside 'absolute -top-12 left-0'. */}
-        {/* If we put SidebarMenu inside the same absolute div as SidebarButton, it will move with it. */}
-        {/* However, the SidebarMenu component currently expects to be in a relative container. */}
-        {/* Let's put SidebarMenu in the same container as SidebarButton to align them easily. */}
+        {/* Sidebar Menu - Only in non-simple mode or when requested? Actually let's keep it but maybe different trigger */}
+        {/* If simple mode, maybe we don't need sidebar button at all if we have bottom links? */}
+        {/* But user might want bomb or other features. Let's keep it but hide it if simple mode prefers minimalism. */}
+        {/* User said "click settings to switch back", implying they might not need sidebar in focus mode. */}
+        {/* But let's keep it accessible via the button we already positioned. */}
         
-        <div className="absolute -top-12 left-0 md:-left-20 md:top-0 z-20">
-             {/* This container aligns with the button */}
+        <div className={`absolute z-20 transition-all duration-500 ${isSimpleMode ? 'top-6 left-6' : '-top-12 left-0 md:-left-20 md:top-0'}`}>
              <SidebarMenu 
                 isOpen={isMenuOpen} 
                 onBomb={handleBomb}
@@ -713,8 +907,12 @@ function App() {
 
 
         <div 
-            className="w-full bg-white p-6 h-[700px] flex flex-col z-10 relative card"
-            style={{ 
+            className={`w-full bg-white flex flex-col z-10 relative card transition-all duration-500 ${
+                isSimpleMode 
+                ? 'h-full rounded-none shadow-none p-0' 
+                : 'h-[700px] p-6'
+            }`}
+            style={isSimpleMode ? { background: 'transparent' } : { 
                 borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px',
                 boxShadow: '8px 8px 0px 0px rgba(45,45,45,1)'
             }}
